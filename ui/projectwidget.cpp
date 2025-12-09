@@ -178,37 +178,74 @@ void projectWidget::generateRandomTrack()
     ui->trackListWidget->clearSelection();
     newTrack->listItem->setSelected(true);
 
-    int numSegments = randInt(rng, 5, 8);
+    auto addStraightSection = [&](float length, float velocity) {
+        newTrack->trackWidgetItem->addSection(straight);
+        secstraight* sec = dynamic_cast<secstraight*>(newTrack->trackData->lSections.last());
+        if(!sec) return;
+
+        sec->fHLength = length;
+        sec->bSpeed = false;
+        sec->fVel = velocity;
+
+        newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
+    };
+
+    auto addCurvedSection = [&](float angle, float radius, float velocity) {
+        newTrack->trackWidgetItem->addSection(curved);
+        seccurved* sec = dynamic_cast<seccurved*>(newTrack->trackData->lSections.last());
+        if(!sec) return;
+
+        sec->fAngle = angle;
+        sec->fRadius = radius;
+        float transition = qMax(5.f, fabs(angle)/6.f);
+        sec->fLeadIn = transition;
+        sec->fLeadOut = transition;
+        sec->bSpeed = false;
+        sec->fVel = velocity;
+
+        newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
+    };
+
+    float headingDeg = 0.f;
+
+    // Station and gentle launch/rollout
+    addStraightSection(randRange(rng, 12.f, 20.f), randRange(rng, 8.f, 14.f));
+
+    // Optional initial climb or dip to kick things off
+    if(chance(rng, 70)) {
+        float startAngle = randRange(rng, 20.f, 60.f);
+        if(chance(rng, 40)) startAngle *= -1.f;
+        addCurvedSection(startAngle, randRange(rng, 18.f, 32.f), randRange(rng, 12.f, 22.f));
+        headingDeg += startAngle;
+    }
+
+    int numSegments = randInt(rng, 5, 9);
     for(int i = 0; i < numSegments; ++i) {
-        bool buildCurve = chance(rng, 55);
+        bool buildCurve = chance(rng, 60);
         if(buildCurve) {
-            newTrack->trackWidgetItem->addSection(curved);
-            seccurved* sec = dynamic_cast<seccurved*>(newTrack->trackData->lSections.last());
-            if(!sec) continue;
-
-            float angle = randRange(rng, 25.f, 85.f);
+            float angle = randRange(rng, 35.f, 95.f);
             if(chance(rng, 50)) angle *= -1.f;
-            sec->fAngle = angle;
-            sec->fRadius = randRange(rng, 12.f, 30.f);
-            float transition = qMax(5.f, fabs(angle)/6.f);
-            sec->fLeadIn = transition;
-            sec->fLeadOut = transition;
-            sec->bSpeed = false;
-            sec->fVel = randRange(rng, 10.f, 24.f);
+            float radius = randRange(rng, 14.f, 32.f);
+            float velocity = randRange(rng, 12.f, 26.f);
 
-            newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
+            addCurvedSection(angle, radius, velocity);
+            headingDeg += angle;
         } else {
-            newTrack->trackWidgetItem->addSection(straight);
-            secstraight* sec = dynamic_cast<secstraight*>(newTrack->trackData->lSections.last());
-            if(!sec) continue;
-
-            sec->fHLength = randRange(rng, 10.f, 35.f);
-            sec->bSpeed = false;
-            sec->fVel = randRange(rng, 12.f, 26.f);
-
-            newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
+            float length = randRange(rng, 10.f, 38.f);
+            float velocity = randRange(rng, 12.f, 26.f);
+            addStraightSection(length, velocity);
         }
     }
+
+    // Try to return the heading near the starting direction with a closing turn
+    if(fabs(headingDeg) > 10.f) {
+        float correction = -headingDeg;
+        correction = qBound(-140.f, correction, 140.f);
+        addCurvedSection(correction, randRange(rng, 16.f, 34.f), randRange(rng, 10.f, 22.f));
+    }
+
+    // Brake run / return to station
+    addStraightSection(randRange(rng, 22.f, 40.f), randRange(rng, 8.f, 12.f));
 
     if(newTrack->trackData->lSections.size() > 0) {
         newTrack->trackWidgetItem->setSelection(newTrack->trackData->lSections.size()-1);
