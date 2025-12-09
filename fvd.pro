@@ -21,13 +21,13 @@
 
 # DEPENDENCIES
 # 
-# QT (tested with 5.4.0)
+# QT (tested with 6.x)
 # glew (for Windows and Linux builds only)
 # glm (tested with 0.9.5.1-1)
 # lib3ds
 
-CONFIG	+= qt
-QT       += core gui widgets printsupport opengl
+CONFIG  += qt
+QT       += core gui widgets printsupport opengl openglwidgets
 
 #CONFIG += exceptions \
 #          rtti
@@ -138,23 +138,18 @@ FORMS    += ui/transitionwidget.ui \
     ui/exportui.ui \
     ui/conversionpanel.ui
 
+INCLUDEPATH += "./ui/"
+INCLUDEPATH += "./renderer/"
+INCLUDEPATH += "./core/"
+
 !unix:!macx {
-    INCLUDEPATH += "./ui/"
-    INCLUDEPATH += "./renderer/"
-    INCLUDEPATH += "./core/"
-
-	INCLUDEPATH += "C:\Development\Libraries\glew-1.12.0\include" # path-to-glew/include
-	INCLUDEPATH += "C:\Development\Libraries\glm" #path-to-glm"
-	INCLUDEPATH += "C:\Development\Libraries\lib3ds-20080909\src" #path-to-lib3ds
-
     RC_FILE = winicon.rc
-
     LIBS += -lOpenGL32
     LIBS += -lGlU32
-	LIBS += "C:\Development\Libraries\glew-1.12.0\lib\Release\x64\glew32.lib" #path-to-glew\lib\Release\Win32\glew32.lib
-	LIBS += "C:\Development\Libraries\glew-1.12.0\bin\Release\x64\glew32.dll" #path-to-glew\bin\Release\Win32\glew32.dll
-	LIBS += "C:\Development\Libraries\lib3ds-20080909\build-lib3ds-64Bit-Release\release\lib3ds.dll" #path-to-glew\bin\Release\Win32\glew32.dll
+    LIBS += -lglew32
+    LIBS += -l3ds
 }
+
 
 unix:!macx {
     INCLUDEPATH += "./ui/"

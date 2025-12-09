@@ -35,11 +35,9 @@
 
 #include <glm/glm.hpp>
 #include <QtGlobal>
-#include <QGLWidget>
-#include "track.h"
 #include <QElapsedTimer>
-#include <QGLShaderProgram>
-#include <QGLBuffer>
+#include "track.h"
+#include "qtglcompat.h"
 
 
 #ifdef USE_OVR
@@ -59,7 +57,7 @@ typedef struct mesh_s
 
 class MainWindow;
 
-class glViewWidget : public QGLWidget
+class glViewWidget : public QtGLWidget
 {
     Q_OBJECT
 public:

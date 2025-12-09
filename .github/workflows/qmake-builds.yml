@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  QT_VERSION: "5.15.2"
+  QT_VERSION: "6.6.3"
 
 jobs:
   linux-build:
@@ -133,7 +133,7 @@ jobs:
           VCPKG_ROOT: ${{ runner.temp }}\vcpkg
         run: |
           call "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          set QT_BIN=%Qt5_DIR%\..\..\bin
+          set QT_BIN=%Qt6_DIR%\..\..\bin
           set PATH=%QT_BIN%;%PATH%
           set INCLUDE=%VCPKG_ROOT%\installed\x64-windows\include;%INCLUDE%
           set LIB=%VCPKG_ROOT%\installed\x64-windows\lib;%LIB%

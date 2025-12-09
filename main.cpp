@@ -19,9 +19,11 @@
 #include <QApplication>
 #include <QtDebug>
 #include <QLoggingCategory>
+#include <QSurfaceFormat>
 #include "mainwindow.h"
 #include "lenassert.h"
 #include "core/logging.h"
+#include "renderer/qtglcompat.h"
 
 QApplication* application;
 
@@ -36,12 +38,12 @@ int main(int argc, char *argv[])
     Logging::initialize();
 
 #ifdef Q_OS_MAC
-    QGLFormat fmt;
-    fmt.setProfile(QGLFormat::CoreProfile);
-    fmt.setVersion(3,2);
-    fmt.setSampleBuffers(true);
-    fmt.setSamples(4);
+    QtGLFormat fmt = qtDefaultSurfaceFormat();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QSurfaceFormat::setDefaultFormat(fmt);
+#else
     QGLFormat::setDefaultFormat(fmt);
+#endif
 #endif
 
     MainWindow w;
