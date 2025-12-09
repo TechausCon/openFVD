@@ -36,8 +36,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QKeyEvent>
-#include <QTime>
-#include <cstdlib>
+#include <QRandomGenerator>
 
 #ifdef Q_OS_MAC
     #include "osx/common.h"
@@ -47,14 +46,19 @@ extern MainWindow* gloParent;
 extern glViewWidget* glView;
 
 namespace {
-float randRange(float min, float max)
+float randRange(QRandomGenerator &rng, float min, float max)
 {
-    return min + (float)qrand()/RAND_MAX * (max - min);
+    return min + static_cast<float>(rng.generateDouble()) * (max - min);
 }
 
-int randInt(int min, int max)
+int randInt(QRandomGenerator &rng, int min, int max)
 {
-    return min + (qrand() % (max - min + 1));
+    return rng.bounded(min, max + 1);
+}
+
+bool chance(QRandomGenerator &rng, int percent)
+{
+    return rng.bounded(100) < percent;
 }
 }
 
@@ -163,7 +167,7 @@ void projectWidget::newEmptyTrack()
 
 void projectWidget::generateRandomTrack()
 {
-    qsrand(QTime::currentTime().msec() + QTime::currentTime().second()*1000);
+    QRandomGenerator rng(QRandomGenerator::securelySeeded());
 
     newEmptyTrack();
     trackHandler* newTrack = trackList.back();
@@ -174,23 +178,23 @@ void projectWidget::generateRandomTrack()
     ui->trackListWidget->clearSelection();
     newTrack->listItem->setSelected(true);
 
-    int numSegments = randInt(5, 8);
+    int numSegments = randInt(rng, 5, 8);
     for(int i = 0; i < numSegments; ++i) {
-        bool buildCurve = (qrand() % 100) < 55;
+        bool buildCurve = chance(rng, 55);
         if(buildCurve) {
             newTrack->trackWidgetItem->addSection(curved);
             seccurved* sec = dynamic_cast<seccurved*>(newTrack->trackData->lSections.last());
             if(!sec) continue;
 
-            float angle = randRange(25.f, 85.f);
-            if(qrand() % 2) angle *= -1.f;
+            float angle = randRange(rng, 25.f, 85.f);
+            if(chance(rng, 50)) angle *= -1.f;
             sec->fAngle = angle;
-            sec->fRadius = randRange(12.f, 30.f);
+            sec->fRadius = randRange(rng, 12.f, 30.f);
             float transition = qMax(5.f, fabs(angle)/6.f);
             sec->fLeadIn = transition;
             sec->fLeadOut = transition;
             sec->bSpeed = false;
-            sec->fVel = randRange(10.f, 24.f);
+            sec->fVel = randRange(rng, 10.f, 24.f);
 
             newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
         } else {
@@ -198,9 +202,9 @@ void projectWidget::generateRandomTrack()
             secstraight* sec = dynamic_cast<secstraight*>(newTrack->trackData->lSections.last());
             if(!sec) continue;
 
-            sec->fHLength = randRange(10.f, 35.f);
+            sec->fHLength = randRange(rng, 10.f, 35.f);
             sec->bSpeed = false;
-            sec->fVel = randRange(12.f, 26.f);
+            sec->fVel = randRange(rng, 12.f, 26.f);
 
             newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
         }
