@@ -10,6 +10,7 @@ Q_DECLARE_LOGGING_CATEGORY(logCore)
 Q_DECLARE_LOGGING_CATEGORY(logRenderer)
 Q_DECLARE_LOGGING_CATEGORY(logUi)
 
+QString rulesForLevel(const QString &level);
 void initialize();
 
 } // namespace Logging
