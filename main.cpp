@@ -46,42 +46,6 @@ void configureSurfaceFormat()
 #endif
 }
 
-QString loggingRulesForLevel(const QString &level)
-{
-    if (level.isEmpty()) {
-        return {};
-    }
-
-    const QString normalized = level.toLower();
-    if (normalized != QLatin1String("debug") && normalized != QLatin1String("info") &&
-        normalized != QLatin1String("warning") && normalized != QLatin1String("critical") &&
-        normalized != QLatin1String("off")) {
-        return {};
-    }
-
-    const bool debugEnabled = normalized == QLatin1String("debug");
-    const bool infoEnabled = debugEnabled || normalized == QLatin1String("info");
-    const bool warningEnabled = infoEnabled || normalized == QLatin1String("warning");
-    const bool criticalEnabled = warningEnabled || normalized == QLatin1String("critical");
-
-    const QStringList categories = {
-        QStringLiteral("fvd.app"),
-        QStringLiteral("fvd.core"),
-        QStringLiteral("fvd.renderer"),
-        QStringLiteral("fvd.ui")
-    };
-
-    QStringList rules;
-    for (const QString &category : categories) {
-        rules << QStringLiteral("%1.debug=%2").arg(category, debugEnabled ? QStringLiteral("true") : QStringLiteral("false"));
-        rules << QStringLiteral("%1.info=%2").arg(category, infoEnabled ? QStringLiteral("true") : QStringLiteral("false"));
-        rules << QStringLiteral("%1.warning=%2").arg(category, warningEnabled ? QStringLiteral("true") : QStringLiteral("false"));
-        rules << QStringLiteral("%1.critical=%2").arg(category, criticalEnabled ? QStringLiteral("true") : QStringLiteral("false"));
-    }
-
-    return rules.join(QLatin1Char('\n'));
-}
-
 QString requestedProjectFile(const QCommandLineParser &parser)
 {
     if (parser.isSet(QStringLiteral("project"))) {
@@ -104,7 +68,7 @@ void configureLoggingFromParser(const QCommandLineParser &parser)
     }
 
     if (parser.isSet(QStringLiteral("log-level"))) {
-        const QString rules = loggingRulesForLevel(parser.value(QStringLiteral("log-level")));
+        const QString rules = Logging::rulesForLevel(parser.value(QStringLiteral("log-level")));
         if (!rules.isEmpty()) {
             qputenv("FVD_LOG_RULES", rules.toUtf8());
         }
