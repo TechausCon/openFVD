@@ -68,6 +68,8 @@ public slots:
 
     void importNoLimitsCSV();
 
+    void generateRandomTrack();
+
     void on_deleteButton_released();
 
     void on_texChooser_released();
