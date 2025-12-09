@@ -12,6 +12,18 @@ Welcome to FVD++, a next generation FVD tool inspired by newton2 (by Keith (Entr
 It is mainly aimed for coaster enthusiasts creating sophisticated force and geometry based coasters.
 That said the tool is still development and I take no warranty of its usefulness in its current state (see License information below).
 
+##########
+# Build  #
+##########
+
+The CMake build prefers Qt 6 but will automatically fall back to Qt 5 if Qt 6 is not installed. When CMake cannot locate Qt, set the Qt installation directory via `CMAKE_PREFIX_PATH` or `Qt6_DIR`/`Qt5_DIR`, for example:
+
+```
+cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x/gcc_64"
+cmake --build build --parallel
+```
+
+
 #############
 # Changelog #
 #############
