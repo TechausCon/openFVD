@@ -211,3 +211,30 @@ void writeToExportFile(std::fstream *file, QList<bezier_t*> &bezList)
         writeNulls(file, 7); // were 5
     }
 }
+
+void writeToExportFile(std::stringstream *file, QList<bezier_t*> &bezList)
+{
+    for(int i = 0; i < bezList.size(); ++i) {
+        writeBytes(file, (const char*)&bezList[i]->Kp1.x, 4);
+        writeBytes(file, (const char*)&bezList[i]->Kp1.y, 4);
+        writeBytes(file, (const char*)&bezList[i]->Kp1.z, 4);
+
+        writeBytes(file, (const char*)&bezList[i]->Kp2.x, 4);
+        writeBytes(file, (const char*)&bezList[i]->Kp2.y, 4);
+        writeBytes(file, (const char*)&bezList[i]->Kp2.z, 4);
+
+        writeBytes(file, (const char*)&bezList[i]->P1.x, 4);
+        writeBytes(file, (const char*)&bezList[i]->P1.y, 4);
+        writeBytes(file, (const char*)&bezList[i]->P1.z, 4);
+
+        writeBytes(file, (const char*)&bezList[i]->roll, 4);
+
+        char cTemp = 0xFF;
+        writeBytes(file, &cTemp, 1); // CONT ROLL
+        cTemp = bezList[i]->relRoll ? 0xFF : 0x00;
+        writeBytes(file, &cTemp, 1); // REL ROLL
+        cTemp = 0x00;
+        writeBytes(file, &cTemp, 1); // equal dist CP
+        writeNulls(file, 7); // were 5
+    }
+}

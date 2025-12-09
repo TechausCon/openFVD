@@ -38,6 +38,18 @@ jobs:
           cd build
           make -j2 2>&1 | tee ../build-linux.log
 
+      - name: Build tests
+        run: |
+          mkdir -p build-tests
+          cd build-tests
+          qmake ../tests/tests.pro -spec linux-g++
+          make -j2
+
+      - name: Run core logic tests
+        run: |
+          cd build-tests/corelogic_tests
+          ./corelogic_tests
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
