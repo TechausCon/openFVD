@@ -19,8 +19,7 @@
 #include "glviewwidget.h"
 
 #include "mainwindow.h"
-#include <QtGui/QMouseEvent>
-#include <QGLContext>
+#include <QMouseEvent>
 #include "optionsmenu.h"
 #include "graphwidget.h"
 #include "trackmesh.h"
@@ -53,11 +52,13 @@ using namespace OVR;
 
 extern MainWindow* gloParent;
 
-glViewWidget::glViewWidget(QWidget *parent) : QGLWidget(parent) {
-	QGLFormat format = QGLFormat::defaultFormat();
-	format.setSampleBuffers(true);
-	format.setOverlay(false);
-	setFormat(format);
+glViewWidget::glViewWidget(QWidget *parent) : QtGLWidget(parent) {
+        QtGLFormat format = qtDefaultSurfaceFormat();
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        format.setSampleBuffers(true);
+        format.setOverlay(false);
+#endif
+        setFormat(format);
 	setMouseTracking(true);
 	setAttribute(Qt::WA_OpaquePaintEvent,true);
 
