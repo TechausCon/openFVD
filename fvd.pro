@@ -36,6 +36,7 @@ TARGET = FVD
 TEMPLATE = app
 
 SOURCES += main.cpp\
+    core/logging.cpp \
     core/undohandler.cpp \
     core/undoaction.cpp \
     core/trackhandler.cpp \
@@ -79,7 +80,8 @@ SOURCES += main.cpp\
     ui/conversionpanel.cpp \
     core/secnlcsv.cpp
 
-HEADERS  += core/undohandler.h \
+HEADERS  += core/logging.h \
+    core/undohandler.h \
     core/undoaction.h \
     core/trackhandler.h \
     core/track.h \

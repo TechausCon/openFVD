@@ -18,10 +18,10 @@
 
 #include <QApplication>
 #include <QtDebug>
-#include <QFile>
-#include <QTextStream>
+#include <QLoggingCategory>
 #include "mainwindow.h"
 #include "lenassert.h"
+#include "core/logging.h"
 
 QApplication* application;
 
@@ -29,51 +29,11 @@ QApplication* application;
 #include "osx/NSApplicationMain.h"
 #endif
 
-void myMessageHandler(QtMsgType type, const QMessageLogContext &, const QString &msg)
-{
-    FILE* log = fopen("fvd.log", "a");
-
-    QByteArray localMsg = msg.toLocal8Bit();
-    switch (type) {
-    case QtDebugMsg:
-        printf("%s\n", localMsg.constData());
-        fprintf(log, "%s\n", localMsg.constData());
-        //printf("Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        //fprintf(log, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        break;
-    case QtWarningMsg:
-        printf("%s\n", localMsg.constData());
-        fprintf(log, "%s\n", localMsg.constData());
-        //printf("Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        //fprintf(log, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        break;
-    case QtCriticalMsg:
-        printf("%s\n", localMsg.constData());
-        fprintf(log, "%s\n", localMsg.constData());
-        //printf("Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        //fprintf(log, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        break;
-    case QtFatalMsg:
-        printf("%s\n", localMsg.constData());
-        fprintf(log, "%s\n", localMsg.constData());
-        //printf("Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        //fprintf(log, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
-        abort();
-    }
-    fflush(stdout);
-    fclose(log);
-}
-
 int main(int argc, char *argv[])
 {
     application = new QApplication(argc, argv);
-#ifndef Q_OS_MAC
-    qInstallMessageHandler(myMessageHandler);
 
-    FILE* log = fopen("fvd.log", "w");
-    fprintf(log, "FVD++ v0.77 Logfile\n");
-    fclose(log);
-#endif
+    Logging::initialize();
 
 #ifdef Q_OS_MAC
     QGLFormat fmt;
@@ -85,11 +45,12 @@ int main(int argc, char *argv[])
 #endif
 
     MainWindow w;
+    qCInfo(Logging::logApp) << "Main window created";
     w.show();
     if(argc == 2) {
         QString fileName(argv[1]);
         if(fileName.endsWith(".fvd")) {
-            qDebug("starting FVD++ with project %s", argv[1]);
+            qCInfo(Logging::logApp, "starting FVD++ with project %s", argv[1]);
             w.loadProject(argv[1]);
         }
     }
