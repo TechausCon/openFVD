@@ -24,7 +24,6 @@
 #include <QApplication>
 
 extern MainWindow* gloParent;
-extern QApplication* application;
 
 extern "C" {
 void initApplication();
@@ -32,7 +31,7 @@ void receiveFileOpen(const char *filename);
 }
 
 void initApplication() {
-    application->exec();
+    QApplication::exec();
 }
 
 void receiveFileOpen(const char *filename) {
