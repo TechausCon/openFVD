@@ -9,7 +9,24 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets PrintSupport OpenGL OpenGLWidgets)
+set(QT_REQUIRED_COMPONENTS Core Gui Widgets PrintSupport OpenGL OpenGLWidgets)
+
+# Prefer Qt6 but fall back to Qt5 when it is not available. This keeps local builds
+# working on systems that still ship Qt5 while allowing newer environments to use
+# Qt6 without extra configuration.
+find_package(Qt6 QUIET COMPONENTS ${QT_REQUIRED_COMPONENTS})
+
+if(NOT Qt6_FOUND)
+    message(STATUS "Qt6 not found; trying Qt5 with component list: ${QT_REQUIRED_COMPONENTS}")
+    find_package(Qt5 REQUIRED COMPONENTS ${QT_REQUIRED_COMPONENTS})
+
+    # Provide Qt6-style target aliases so the rest of the build stays unchanged.
+    foreach(comp IN LISTS QT_REQUIRED_COMPONENTS)
+        if(TARGET Qt5::${comp} AND NOT TARGET Qt6::${comp})
+            add_library(Qt6::${comp} ALIAS Qt5::${comp})
+        endif()
+    endforeach()
+endif()
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(PkgConfig)
