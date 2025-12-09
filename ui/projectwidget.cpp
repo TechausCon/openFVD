@@ -30,10 +30,14 @@
 #include "trackproperties.h"
 #include "lenassert.h"
 #include "trackwidget.h"
+#include "seccurved.h"
+#include "secstraight.h"
 #include <QMenu>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QKeyEvent>
+#include <QTime>
+#include <cstdlib>
 
 #ifdef Q_OS_MAC
     #include "osx/common.h"
@@ -41,6 +45,18 @@
 
 extern MainWindow* gloParent;
 extern glViewWidget* glView;
+
+namespace {
+float randRange(float min, float max)
+{
+    return min + (float)qrand()/RAND_MAX * (max - min);
+}
+
+int randInt(int min, int max)
+{
+    return min + (qrand() % (max - min + 1));
+}
+}
 
 projectWidget::projectWidget(QWidget *parent) :
     QWidget(parent),
@@ -129,6 +145,7 @@ void projectWidget::on_addButton_released()
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
     menu->addAction("Empty Track", this, SLOT(newEmptyTrack()));
+    menu->addAction("Auto-Generate Track", this, SLOT(generateRandomTrack()));
     menu->addAction("From other FVD Project", this, SLOT(importFromProject()));
     menu->addAction("Import NoLimits 1 Track", this, SLOT(importNLTrack()));
     menu->addAction("Import NoLimits 2 CSV", this, SLOT(importNoLimitsCSV()));
@@ -142,6 +159,59 @@ void projectWidget::newEmptyTrack()
     trackHandler* _newTrack = new trackHandler(QString("unnamed Track"), trackList.size()+1);
     trackList.append(_newTrack);
     ui->trackListWidget->addTopLevelItem(_newTrack->listItem);
+}
+
+void projectWidget::generateRandomTrack()
+{
+    qsrand(QTime::currentTime().msec() + QTime::currentTime().second()*1000);
+
+    newEmptyTrack();
+    trackHandler* newTrack = trackList.back();
+
+    newTrack->trackData->name = QString("Auto Track %1").arg(trackList.size());
+    newTrack->listItem->setText(1, newTrack->trackData->name);
+
+    ui->trackListWidget->clearSelection();
+    newTrack->listItem->setSelected(true);
+
+    int numSegments = randInt(5, 8);
+    for(int i = 0; i < numSegments; ++i) {
+        bool buildCurve = (qrand() % 100) < 55;
+        if(buildCurve) {
+            newTrack->trackWidgetItem->addSection(curved);
+            seccurved* sec = dynamic_cast<seccurved*>(newTrack->trackData->lSections.last());
+            if(!sec) continue;
+
+            float angle = randRange(25.f, 85.f);
+            if(qrand() % 2) angle *= -1.f;
+            sec->fAngle = angle;
+            sec->fRadius = randRange(12.f, 30.f);
+            float transition = qMax(5.f, fabs(angle)/6.f);
+            sec->fLeadIn = transition;
+            sec->fLeadOut = transition;
+            sec->bSpeed = false;
+            sec->fVel = randRange(10.f, 24.f);
+
+            newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
+        } else {
+            newTrack->trackWidgetItem->addSection(straight);
+            secstraight* sec = dynamic_cast<secstraight*>(newTrack->trackData->lSections.last());
+            if(!sec) continue;
+
+            sec->fHLength = randRange(10.f, 35.f);
+            sec->bSpeed = false;
+            sec->fVel = randRange(12.f, 26.f);
+
+            newTrack->trackData->updateTrack(newTrack->trackData->lSections.size()-1, 0);
+        }
+    }
+
+    if(newTrack->trackData->lSections.size() > 0) {
+        newTrack->trackWidgetItem->setSelection(newTrack->trackData->lSections.size()-1);
+    }
+    newTrack->trackWidgetItem->updateSectionFrame();
+    newTrack->graphWidgetItem->redrawGraphs();
+    emit updateTracks();
 }
 
 void projectWidget::importFromProject(QString fileName)
@@ -501,12 +571,14 @@ void projectWidget::on_trackListWidget_customContextMenuRequested(const QPoint &
 
     if(ui->trackListWidget->itemAt(pos) == NULL) {
         menu->addAction("New Empty Track", this, SLOT(newEmptyTrack()));
+        menu->addAction("Auto-Generate Track", this, SLOT(generateRandomTrack()));
         menu->addAction("Import Track from Project", this, SLOT(importFromProject()));
         menu->addAction("Import NoLimits 1 Track", this, SLOT(importNLTrack()));
         menu->addAction("Import NoLimits 2 CSV", this, SLOT(importNoLimitsCSV()));
         menu->addAction("Import from Pointlist", this, SLOT(importPointList()));
     } else {
         menu->addAction("New Empty Track", this, SLOT(newEmptyTrack()));
+        menu->addAction("Auto-Generate Track", this, SLOT(generateRandomTrack()));
         menu->addAction("Import Track from Project", this, SLOT(importFromProject()));
         menu->addAction("Import NoLimits 1 Track", this, SLOT(importNLTrack()));
         menu->addAction("Import NoLimits 2 CSV", this, SLOT(importNoLimitsCSV()));
