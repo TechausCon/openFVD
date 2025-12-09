@@ -1,0 +1,140 @@
+name: QMake builds
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+env:
+  QT_VERSION: "5.15.2"
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libglew-dev libglm-dev lib3ds-1-3 lib3ds-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Configure project
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../fvd.pro -spec linux-g++
+
+      - name: Build
+        run: |
+          cd build
+          make -j2 2>&1 | tee ../build-linux.log
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            build/FVD
+            build-linux.log
+          if-no-files-found: warn
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    needs: linux-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          cache: true
+
+      - name: Install analysis dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libglew-dev libglm-dev lib3ds-1-3 lib3ds-dev libgl1-mesa-dev libglu1-mesa-dev clang-tidy bear
+
+      - name: Configure project
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../fvd.pro -spec linux-g++
+
+      - name: Build with compilation database
+        run: |
+          cd build
+          bear --output compile_commands.json -- make -j2
+
+      - name: Run clang-tidy
+        run: |
+          cd build
+          find ../core ../renderer ../ui -name "*.cpp" -print0 | xargs -0 -n 50 clang-tidy -p . 2>&1 | tee ../clang-tidy.log
+
+      - name: Upload clang-tidy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy
+          path: |
+            clang-tidy.log
+            build/compile_commands.json
+          if-no-files-found: warn
+
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: windows
+          target: desktop
+          arch: win64_msvc2019_64
+          cache: true
+
+      - name: Set up Vcpkg dependencies
+        shell: pwsh
+        env:
+          VCPKG_ROOT: ${{ runner.temp }}\vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
+          Set-Location $env:VCPKG_ROOT
+          .\bootstrap-vcpkg.bat
+          .\vcpkg.exe install glew glm lib3ds --triplet x64-windows
+
+      - name: Configure and build
+        shell: cmd
+        env:
+          VCPKG_ROOT: ${{ runner.temp }}\vcpkg
+        run: |
+          call "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          set QT_BIN=%Qt5_DIR%\..\..\bin
+          set PATH=%QT_BIN%;%PATH%
+          set INCLUDE=%VCPKG_ROOT%\installed\x64-windows\include;%INCLUDE%
+          set LIB=%VCPKG_ROOT%\installed\x64-windows\lib;%LIB%
+          mkdir build
+          cd build
+          qmake ..\fvd.pro
+          nmake /S > ..\build-windows.log 2>&1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            build\release\FVD.exe
+            build-windows.log
+          if-no-files-found: warn
