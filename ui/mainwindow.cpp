@@ -26,6 +26,7 @@
 #include "optionsmenu.h"
 #include "conversionpanel.h"
 #include "graphwidget.h"
+#include "core/logging.h"
 #include <sstream>
 #include "trackwidget.h"
 #include <QTimer>
@@ -45,6 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     gloParent = this;
     project = NULL;
+
+    qCInfo(Logging::logUi) << "Initializing main window";
 
     // load options
     mOptions = new optionsMenu(this);
